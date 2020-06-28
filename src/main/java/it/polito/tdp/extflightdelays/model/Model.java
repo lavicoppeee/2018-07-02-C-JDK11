@@ -20,6 +20,8 @@ public class Model {
 	private Graph<Airport,DefaultWeightedEdge> graph;
 	Map<Integer,Airport> idMap;
 	
+	Double bestTratta;
+	List<Airport> bestRotte;
 	
 	public Model() {
 		dao= new ExtFlightDelaysDAO();
@@ -63,4 +65,59 @@ public class Model {
 		Collections.sort(result);
 		return result;
 	}
+	
+	public List<Airport> getCammino(Airport partenza,Airport destinazione, double maxTratte){
+		this.bestRotte=new ArrayList<>();
+		this.bestTratta=0.0;
+		
+		List<Airport> parziale= new ArrayList<Airport>();
+		parziale.add(partenza);
+		ricorsione(parziale,partenza,destinazione,maxTratte);
+		
+		return bestRotte;
+	}
+
+	private void ricorsione(List<Airport> parziale,
+			Airport partenza,
+			Airport destinazione, double maxTratte) {
+	
+		Double peso=this.calcolaPeso(parziale);
+		if(parziale.contains(destinazione)|| peso>maxTratte)
+			return;
+		else
+			if(peso>=bestTratta){
+				this.bestTratta=peso;
+				this.bestRotte=new ArrayList<>(parziale);
+			}
+		List<Airport> vicini=Graphs.neighborListOf(graph, partenza);
+		
+		for(Airport v:vicini) {
+			if(!parziale.contains(v)) {
+				parziale.add(v);
+				ricorsione(parziale,v,destinazione,maxTratte);
+				parziale.remove(parziale.size()-1);
+			}
+		}
+		
+	}
+	
+	private double calcolaPeso(List<Airport> parziale) {
+		double peso=0.0;
+		
+		for(int i=1; i<parziale.size();i++) {
+			if(this.graph.getEdge(parziale.get(i), parziale.get(i-1)) != null) {
+				
+			Double pNew=this.graph.getEdgeWeight(this.graph.getEdge(parziale.get(i-1),parziale.get(i)));
+			peso+=pNew;
+		}
+	}
+		
+		return peso;
+	}
+
+	public Double getBestTratta() {
+		return bestTratta;
+	}
+	
+	
 }
