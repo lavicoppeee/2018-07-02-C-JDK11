@@ -5,8 +5,11 @@
 package it.polito.tdp.extflightdelays;
 
 import java.net.URL;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.extflightdelays.model.Airport;
+import it.polito.tdp.extflightdelays.model.Arco;
 import it.polito.tdp.extflightdelays.model.Model;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -35,13 +38,13 @@ public class ExtFlightDelaysController {
     private Button btnAnalizza; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbBoxAeroportoPartenza"
-    private ComboBox<?> cmbBoxAeroportoPartenza; // Value injected by FXMLLoader
+    private ComboBox<Airport> cmbBoxAeroportoPartenza; // Value injected by FXMLLoader
 
     @FXML // fx:id="btnAeroportiConnessi"
     private Button btnAeroportiConnessi; // Value injected by FXMLLoader
 
     @FXML // fx:id="cmbBoxAeroportoDestinazione"
-    private ComboBox<?> cmbBoxAeroportoDestinazione; // Value injected by FXMLLoader
+    private ComboBox<Airport> cmbBoxAeroportoDestinazione; // Value injected by FXMLLoader
 
     @FXML // fx:id="numeroTratteTxtInput"
     private TextField numeroTratteTxtInput; // Value injected by FXMLLoader
@@ -51,12 +54,41 @@ public class ExtFlightDelaysController {
 
     @FXML
     void doAnalizzaAeroporti(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	String xS=this.compagnieMinimo.getText();
+    	
+        Integer x;
+    	
+    	try {
+    		x=Integer.parseInt(xS);
+    	}catch(NumberFormatException e) {
+    		
+    		txtResult.setText("Devi inserire solo numeri");
+    		return ;
+    	}
+    	
+    	this.model.creaGrafo(x);
+    	txtResult.appendText("Grafo Creato!\n");
+     	txtResult.appendText("# Vertici: " + model.nVertici()+ "\n");
+     	txtResult.appendText("# Archi: " + model.nArchi() + "\n");
+     	
+     	this.cmbBoxAeroportoDestinazione.getItems().addAll(model.Airport());
+     	this.cmbBoxAeroportoPartenza.getItems().addAll(model.Airport());
     }
 
     @FXML
     void doCalcolaAeroportiConnessi(ActionEvent event) {
-
+    	this.txtResult.clear();
+    	Airport a=this.cmbBoxAeroportoPartenza.getValue();
+    	
+    	List<Arco> aList=this.model.getConnessi(a);
+    	
+    	txtResult.appendText("Aereoporto"+a+"è connesso ad:\n");
+    	
+    	for(Arco aC: aList) {
+    		txtResult.appendText(aC.toString()+"\n");
+    	}
+    	
     }
 
     @FXML

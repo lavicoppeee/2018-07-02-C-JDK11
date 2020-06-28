@@ -7,9 +7,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import it.polito.tdp.extflightdelays.model.Airline;
 import it.polito.tdp.extflightdelays.model.Airport;
+import it.polito.tdp.extflightdelays.model.Arco;
 import it.polito.tdp.extflightdelays.model.Flight;
 
 public class ExtFlightDelaysDAO {
@@ -90,5 +92,67 @@ public class ExtFlightDelaysDAO {
 			System.out.println("Errore connessione al database");
 			throw new RuntimeException("Error Connection Database");
 		}
+	}
+
+	public void getVeritici(int x, Map<Integer, Airport> idMap) {
+		String sql="SELECT a.AIRPORT,a.CITY,a.COUNTRY,a.IATA_CODE,a.ID,a.LATITUDE,a.LONGITUDE,a.STATE, a.TIMEZONE_OFFSET " + 
+				"FROM airports as a, flights as f " + 
+				"WHERE f.AIRLINE_ID>=? and (f.DESTINATION_AIRPORT_ID=a.ID or f.ORIGIN_AIRPORT_ID=a.ID) " + 
+				"GROUP BY a.ID " + 
+				"ORDER BY a.AIRPORT ASC ";
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, x);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				if(!idMap.containsKey(rs.getInt("ID"))) {
+				Airport airport = new Airport(rs.getInt("ID"), rs.getString("IATA_CODE"), rs.getString("AIRPORT"),
+						rs.getString("CITY"), rs.getString("STATE"), rs.getString("COUNTRY"), rs.getDouble("LATITUDE"),
+						rs.getDouble("LONGITUDE"), rs.getDouble("TIMEZONE_OFFSET"));
+				idMap.put(airport.getId(), airport);
+				}
+			}
+
+			conn.close();
+		
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+
+	public List<Arco> getArchi(Map<Integer, Airport> idMap) {
+		String sql="SELECT a1.ID as a1, a2.ID as a2, COUNT(f.ID) as peso " + 
+				"FROM airports as a1,  airports as a2, flights as f " + 
+				"WHERE a1.ID<>a2.ID and (f.`DESTINATION_AIRPORT_ID`=a1.ID or f.`ORIGIN_AIRPORT_ID`=a1.ID) and (f.`DESTINATION_AIRPORT_ID`=a2.ID or f.`ORIGIN_AIRPORT_ID`=a2.ID) " + 
+				"and f.ID>0  " + 
+				"GROUP BY a1.ID, a2.ID ";
+		
+		List<Arco> result=new ArrayList<>();
+		try {
+			Connection conn = ConnectDB.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				if(idMap.containsKey(rs.getInt("a1")) && idMap.containsKey(rs.getInt("a2"))) {
+				Arco arco=new Arco(idMap.get(rs.getInt("a1")),idMap.get(rs.getInt("a2")), rs.getDouble("peso"));
+				result.add(arco);
+				}
+			}
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+		
 	}
 }
